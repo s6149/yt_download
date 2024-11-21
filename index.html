@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>YouTube 影片下載器</title>
+    <style>
+        body {
+            font-family: "Microsoft JhengHei", Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .btn {
+            background-color: #ff0000;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-family: "Microsoft JhengHei", Arial, sans-serif;
+        }
+        #result {
+            margin-top: 20px;
+        }
+        select, input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            font-family: "Microsoft JhengHei", Arial, sans-serif;
+        }
+        .loading {
+            display: none;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>YouTube 影片下載器</h1>
+    <div class="form-group">
+        <label>YouTube 網址：</label>
+        <input type="text" id="videoUrl" placeholder="https://www.youtube.com/watch?v=...">
+    </div>
+    <div class="form-group">
+        <label>格式：</label>
+        <select id="format">
+            <option value="mp4">MP4</option>
+            <option value="mp3">MP3 (僅音訊)</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label>畫質：</label>
+        <select id="quality">
+            <option value="best">最高畫質 (1080p 或更高)</option>
+            <option value="medium">中等畫質 (720p)</option>
+            <option value="worst">最低畫質 (360p)</option>
+        </select>
+    </div>
+    <button class="btn" onclick="downloadVideo()">下載</button>
+    <div id="loading" class="loading">下載中，請稍候...</div>
+    <div id="result"></div>
+
+    <script>
+        async function downloadVideo() {
+            const videoUrl = document.getElementById('videoUrl').value;
+            const format = document.getElementById('format').value;
+            const quality = document.getElementById('quality').value;
+            
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('result').innerHTML = '';
+            
+            try {
+                const response = await fetch('http://192.168.10.98:3206/download', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        url: videoUrl,
+                        format: format,
+                        quality: quality
+                    })
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = format === 'mp4' ? 'video.mp4' : 'audio.mp3';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                    document.getElementById('result').innerHTML = '下載成功！';
+                } else {
+                    document.getElementById('result').innerHTML = '下載失敗：' + response.statusText;
+                }
+            } catch (error) {
+                document.getElementById('result').innerHTML = '錯誤：' + error.message;
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
